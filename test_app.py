@@ -4,6 +4,9 @@ from PyQt5.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QPushButton,
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtCore import QTimer, Qt
 import subprocess
+import volume_control
+import brightness_control
+    
 
 class MyApp(QMainWindow):
     def __init__(self):
@@ -25,14 +28,14 @@ class MyApp(QMainWindow):
 
         # Create buttons
         self.run_button = QPushButton("Run")
-        self.mode1_button = QPushButton("Mode 1")
+        self.brightness_button = QPushButton("Brightness Control")
         self.mode2_button = QPushButton("Mode 2")
-        self.mode3_button = QPushButton("Mode 3")
+        self.mode3_button = QPushButton("Volume Control")
         self.stop_button = QPushButton("Stop")
 
         # Add buttons to layout
         buttons_layout.addWidget(self.run_button)
-        buttons_layout.addWidget(self.mode1_button)
+        buttons_layout.addWidget(self.brightness_button)
         buttons_layout.addWidget(self.mode2_button)
         buttons_layout.addWidget(self.mode3_button)
         buttons_layout.addWidget(self.stop_button)
@@ -42,15 +45,17 @@ class MyApp(QMainWindow):
         layout.addWidget(self.video_label)
 
         # Initialize OpenCV video capture
-        self.cap = None
 
         # Connect run button click event
         self.run_button.clicked.connect(self.run_volume_control) # type: ignore
-        process1 = self.mode1_button.clicked.connect(self.run_brightness_control) # type: ignore
+        process1 = self.brightness_button.clicked.connect(self.run_brightness_control) # type: ignore
         process2 = self.mode2_button.clicked.connect(self.run_volume_control) # type: ignore
         self.stop_button.clicked.connect(self.run_brightness_control) # type: ignore
 
     def show_video(self):
+
+        self.cap = None
+
         if self.cap is not None:
             ret, frame = self.cap.read()
             if ret:
@@ -76,16 +81,11 @@ class MyApp(QMainWindow):
         # Schedule the next frame update
         QTimer.singleShot(10, self.show_video)
 
-    def run_brightness_control(self):
-        # Run the other Python file as a subprocess
-        
-        process = subprocess.Popen(["python", ".\\brightness_control.py"])
-
+    def run_brightness_control(self,cap):
         # Start video capture
-        self.cap = cv2.VideoCapture(0)
         self.show_video()
+        brightness_control.brightness(self.cap)
 
-        return process
 
     def run_volume_control(self):
         # Run the other Python file as a subprocess

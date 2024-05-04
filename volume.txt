@@ -6,7 +6,7 @@ import numpy as np
 from ctypes import cast, POINTER
 from comtypes import CLSCTX_ALL
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
-    
+
 devices = AudioUtilities.GetSpeakers()
 interface = devices.Activate(
     IAudioEndpointVolume._iid_, CLSCTX_ALL, None)
@@ -84,7 +84,7 @@ with mp_hands.Hands(
       area = (box[2] - box[0]) * (box[3] - box[1]) // 100
 
 
-      if 200 < area < 1000:
+      if 300 < area < 1000:
         cv2.putText(image, 'GestureControl On', (0, 30), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 255, 0), 2)
         cv2.putText(image, str(int(area)), (box[1] + 50, box[1]), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 255, 0), 2)
 
@@ -127,17 +127,17 @@ with mp_hands.Hands(
           volume.SetMasterVolumeLevelScalar(volumePercent / 100, None)
           cv2.putText(image, 'Volume Set', (0, 90), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 0, 255), 2)
           colorVol = (0, 255, 0)
-        # elif fCount[3] == 1 and fCount[2] == 0 and fCount[1] == 0 and muteStatus == False:
-        #   volume.SetMute(1, None)
-        #   cv2.putText(image, 'Muted', (0, 90), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 0, 255), 2)
-        #   muteStatus = True
-        # elif fCount[3] == 0 and fCount[2] == 0 and fCount[1] == 0 and muteStatus == True:
-        #   volume.SetMute(0, None)
-        #   cv2.putText(image, 'Unmuted', (0, 90), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 0, 255), 2)
-        #   muteStatus = False
+        elif fCount[3] == 1 and fCount[2] == 0 and fCount[1] == 0 and muteStatus == False:
+          volume.SetMute(1, None)
+          cv2.putText(image, 'Muted', (0, 90), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 0, 255), 2)
+          muteStatus = True
+        elif fCount[3] == 0 and fCount[2] == 0 and fCount[1] == 0 and muteStatus == True:
+          volume.SetMute(0, None)
+          cv2.putText(image, 'Unmuted', (0, 90), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 0, 255), 2)
+          muteStatus = False
 
-        # if muteStatus == True:
-        #   cv2.putText(image, "Muted", (0, 120), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 0, 255), 2)
+        if muteStatus == True:
+          cv2.putText(image, "Muted", (0, 120), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 0, 255), 2)
 
       else:
         cv2.putText(image, 'GestureControl Off', (0, 30), cv2.FONT_HERSHEY_COMPLEX, 1, (0, 0, 255), 2)
