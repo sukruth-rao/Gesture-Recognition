@@ -54,7 +54,7 @@ class MyApp(QMainWindow):
 
     def show_video(self):
 
-        self.cap = None
+        self.cap = cv2.VideoCapture(0)
 
         if self.cap is not None:
             ret, frame = self.cap.read()
