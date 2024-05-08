@@ -14,7 +14,7 @@ class MyApp(QMainWindow):
         self.setWindowTitle("My Desktop App")
         self.setGeometry(100, 100, 1280, 720)
 
-        # Create central widget and layout
+            # Create central widget and layout
         central_widget = QWidget()
         self.setCentralWidget(central_widget)
         layout = QHBoxLayout(central_widget)
