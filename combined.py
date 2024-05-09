@@ -9,6 +9,8 @@ from ctypes import cast, POINTER
 from comtypes import CLSCTX_ALL
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 import screen_brightness_control as sbc
+from google.protobuf.json_format import MessageToDict
+
 
 
 devices = AudioUtilities.GetSpeakers()
@@ -248,17 +250,29 @@ with mp_hands.Hands(
 
         if results.multi_hand_landmarks:
             num_hands = len(results.multi_hand_landmarks)
+            # print(results.multi_handedness)
 
             for hand_landmarks in results.multi_hand_landmarks:
                 mp_drawing.draw_landmarks(image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
 
-            if num_hands == 1:
-                # run_volume(image, results, lml1, xl1, yl1, box1)  # Call volume control method
-                run_bright(image, results, lml2, xl2, yl2, box2)  # Call brightness control method
-            elif num_hands == 2:
-                run_bright(image, results, lml2, xl2, yl2, box2)  # Call brightness control method
-                run_volume(image, results, lml1, xl1, yl1, box1)  # Call volume control method
-
+            # if num_hands == 1:
+            #     # run_volume(image, results, lml1, xl1, yl1, box1)  # Call volume control method
+            #     run_bright(image, results, lml2, xl2, yl2, box2)  # Call brightness control method
+            # elif num_hands == 2:
+            #     run_bright(image, results, lml2, xl2, yl2, box2)  # Call brightness control method
+            #     run_volume(image, results, lml1, xl1, yl1, box1)  # Call volume control method
+            for idx, hand_handedness in enumerate(results.multi_handedness):
+                handedness_dict = MessageToDict(hand_handedness)
+                print(handedness_dict) 
+                if handedness_dict['classification'][idx]['label'] =='Right':
+                    run_bright(image, results, lml2, xl2, yl2, box2)
+                if handedness_dict['classification'][idx]['label'] =='Left':
+                    run_volume(image, results, lml1, xl1, yl1, box1)
+            # for i in results.multi_handedness:
+                # if results.multi_handedness[i].label == 'Right':
+            #         run_bright(image, results, lml2, xl2, yl2, box2)  # Call brightness control method
+            #     if results.multi_handedness[i].label == 'Left':
+            #         run_volume(image, results, lml1, xl1, yl1, box1)  # Call volume control method
 
         cv2.imshow('MediaPipe Hands', image)
 
