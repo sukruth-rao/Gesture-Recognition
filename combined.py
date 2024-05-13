@@ -9,8 +9,6 @@ from ctypes import cast, POINTER
 from comtypes import CLSCTX_ALL
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
 import screen_brightness_control as sbc
-from google.protobuf.json_format import MessageToDict
-
 
 
 devices = AudioUtilities.GetSpeakers()
@@ -31,7 +29,14 @@ mp_hands = mp.solutions.hands
 
 
 
-def run_volume(image, lml, xl, yl, box, w):
+def run_volume(image, results, lml, xl, yl, box):
+    # Step 2: Create lists of coordinates from extracted landmarks
+    for id, lm in enumerate(results.multi_hand_landmarks[1].landmark):
+        h, w, _ = image.shape
+        xc, yc = int(lm.x * w), int(lm.y * h)
+        lml.append([id, xc, yc])
+        xl.append(xc)
+        yl.append(yc)
 
     #Step 3: Obtain coordinates thumb and index finger tips and draw circles on the and a line between them
     x1, y1 = lml[4][1], lml[4][2]
@@ -112,10 +117,23 @@ def run_volume(image, lml, xl, yl, box, w):
         cv2.putText(image, str(int(area)), (box[1] + 50, box[1]), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
     
+    # # Optional Step: FPS Counter
+    # currentTime = time.time()
+    # fps = 1 / (currentTime - previousTime) # type: ignore
+    # previousTime = currentTime
+    # cv2.putText(image, f'FPS: {int(fps)}', (w-150, 50), cv2.FONT_HERSHEY_SIMPLEX,
+    #             1, (255, 255, 255), 2)
 
 
-def run_bright(image, lml, xl, yl, box, w):
+def run_bright(image, results, lml, xl, yl, box):
 
+    # Step 2: Create lists of coordinates from extracted landmarks
+    for id, lm in enumerate(results.multi_hand_landmarks[0].landmark):
+        h, w, _ = image.shape
+        xc, yc = int(lm.x * w), int(lm.y * h)
+        lml.append([id, xc, yc])
+        xl.append(xc)
+        yl.append(yc)
 
     #  Step 3: Obtain coordinates thumb and index finger tips and draw circles on the and a line between them
     x1, y1 = lml[4][1], lml[4][2]
@@ -208,10 +226,10 @@ with mp_hands.Hands(
         xl1 = []
         yl1 = []
         box1 = []
-        lml0 = []
-        xl0= []
-        yl0 = []
-        box0 = []
+        lml2 = []
+        xl2 = []
+        yl2 = []
+        box2 = []
 
         # Flip the image horizontally for a later selfie-view display, and convert
         # the BGR image to RGB.
@@ -230,60 +248,20 @@ with mp_hands.Hands(
 
         if results.multi_hand_landmarks:
             num_hands = len(results.multi_hand_landmarks)
-            print(results.multi_handedness)
 
             for hand_landmarks in results.multi_hand_landmarks:
                 mp_drawing.draw_landmarks(image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
 
-            # if num_hands == 1:
-            #     # run_volume(image, results, lml1, xl1, yl1, box1)  # Call volume control method
-            #     run_bright(image, results, lml2, xl2, yl2, box2)  # Call brightness control method
-            # elif num_hands == 2:
-            #     run_bright(image, results, lml2, xl2, yl2, box2)  # Call brightness control method
-            #     run_volume(image, results, lml1, xl1, yl1, box1)  # Call volume control method
-            for idx, hand_handedness in enumerate(results.multi_handedness):
-                handedness_dict = MessageToDict(hand_handedness)
-                if handedness_dict['classification'][0]['label'] == 'Left':
-                    # run_bright(image, results, lml0, xl0, yl0, box0, w, h)
-
-            # Step 2: Create lists of coordinates from extracted landmarks
             if num_hands == 1:
-                for id0, lm0 in enumerate(results.multi_hand_landmarks[0].landmark):
-                    h0, w0, _ = image.shape
-                    xc0, yc0 = int(lm0.x * w0), int(lm0.y * h0)
-                    lml0.append([id0, xc0, yc0])
-                    xl0.append(xc0)
-                    yl0.append(yc0)
-                run_bright(image, lml0, xl0, yl0, box0, w0)
-            elif num_hands > 1:
-                for id1, lm1 in enumerate(results.multi_hand_landmarks[1].landmark):
-                    h1, w1, _ = image.shape
-                    xc1, yc1 = int(lm1.x * w1), int(lm1.y * h1)
-                    lml1.append([id1, xc1, yc1])
-                    xl1.append(xc1)
-                    yl1.append(yc1)
-                run_volume(image, lml1, xl1, yl1, box1, w1)
-                # print(handedness_dict['classification'][0]['label'])
-                if handedness_dict['classification'][0]['label'] == 'Right':
-                # print(type(handedness_dict))
-                # if handedness_dict['classification'][idx]['label'] =='Right':
-                #     run_bright(image, results, lml2, xl2, yl2, box2)
-                # if handedness_dict['classification'][idx]['label'] =='Left':
-                #     run_volume(image, results, lml1, xl1, yl1, box1)
-            # for i in results.multi_handedness:
-                # if results.multi_handedness[i].label == 'Right':
-            #         run_bright(image, results, lml2, xl2, yl2, box2)  # Call brightness control method
-            #     if results.multi_handedness[i].label == 'Left':
-            #         run_volume(image, results, lml1, xl1, yl1, box1)  # Call volume control method
+                # run_volume(image, results, lml1, xl1, yl1, box1)  # Call volume control method
+                run_bright(image, results, lml2, xl2, yl2, box2)  # Call brightness control method
+            elif num_hands == 2:
+                run_bright(image, results, lml2, xl2, yl2, box2)  # Call brightness control method
+                run_volume(image, results, lml1, xl1, yl1, box1)  # Call volume control method
+
 
         cv2.imshow('MediaPipe Hands', image)
 
-        # Optional Step: FPS Counter
-        currentTime = time.time()
-        fps = 1 / (currentTime - previousTime) # type: ignore
-        previousTime = currentTime
-        cv2.putText(image, f'FPS: {int(fps)}', (0, 50), cv2.FONT_HERSHEY_SIMPLEX,
-                    1, (255, 255, 255), 2)
         if cv2.waitKey(5) & 0xFF == ord('q'):
             break
 cap.release()
