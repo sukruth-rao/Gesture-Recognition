@@ -58,7 +58,7 @@ def run_volume(image, results, lml, xl, yl, box):
 
 
     if 200 < area < 1000:
-        cv2.putText(image, 'GestureControl On', (0, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+        cv2.putText(image, 'Volume Control On', (0, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
         cv2.putText(image, str(int(area)), (box[1] + 50, box[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
         #Step 5: Compute volume and draw volume information
@@ -113,7 +113,7 @@ def run_volume(image, results, lml, xl, yl, box):
         #   cv2.putText(image, "Muted", (0, 120), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
     else:
-        cv2.putText(image, 'GestureControl Off', (0, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        cv2.putText(image, 'Volume Control Off', (600, image.shape[1] // 2), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
         cv2.putText(image, str(int(area)), (box[1] + 50, box[1]), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
     
@@ -155,7 +155,7 @@ def run_bright(image, results, lml, xl, yl, box):
 
 
     if 200 < area < 1000:
-        cv2.putText(image, 'GestureControl On', (image.shape[1] - 200, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+        cv2.putText(image, 'Brightness Control On', (image.shape[1] - 200, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
         cv2.putText(image, str(int(area)), (box[1] + 50, box[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
         #Step 5: Compute brightness and draw brightness information
