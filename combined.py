@@ -211,59 +211,67 @@ def run_bright(image, results, lml, xl, yl, box):
         cv2.putText(image, 'GestureControl Off', (0, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
         cv2.putText(image, str(int(area)), (box[1] + 50, box[1]), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
-cap = cv2.VideoCapture(0)
-with mp_hands.Hands(
-    min_detection_confidence=0.75,
-    min_tracking_confidence=0.75) as hands:
-    while cap.isOpened():
-        success, image = cap.read()
-        if not success:
-            print("Ignoring empty camera frame.")
-        # If loading a video, use 'break' instead of 'continue'.
-            continue
 
-        lml1 = []
-        xl1 = []
-        yl1 = []
-        box1 = []
-        lml2 = []
-        xl2 = []
-        yl2 = []
-        box2 = []
+def run():
 
-        # Flip the image horizontally for a later selfie-view display, and convert
-        # the BGR image to RGB.
-        image = cv2.cvtColor(cv2.flip(image, 1), cv2.COLOR_BGR2RGB)
-        # To improve performance, optionally mark the image as not writeable to
-        # pass by reference.
-        image.flags.writeable = False
-        results = hands.process(image)
+    cap = cv2.VideoCapture(0)
+    with mp_hands.Hands(
+        min_detection_confidence=0.75,
+        min_tracking_confidence=0.75) as hands:
+        while cap.isOpened():
+            success, image = cap.read()
+            if not success:
+                print("Ignoring empty camera frame.")
+            # If loading a video, use 'break' instead of 'continue'.
+                continue
 
-        # Draw the hand annotations on the image.
-        image.flags.writeable = True
-        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+            lml1 = []
+            xl1 = []
+            yl1 = []
+            box1 = []
+            lml2 = []
+            xl2 = []
+            yl2 = []
+            box2 = []
 
-        # t1 = threading.Thread(target=run_volume, args=(image, results)) # type: ignore
-        # t2 = threading.Thread(target=run_bright, args=(image, results)) # type: ignore
+            # Flip the image horizontally for a later selfie-view display, and convert
+            # the BGR image to RGB.
+            image = cv2.cvtColor(cv2.flip(image, 1), cv2.COLOR_BGR2RGB)
+            # To improve performance, optionally mark the image as not writeable to
+            # pass by reference.
+            image.flags.writeable = False
+            results = hands.process(image)
 
-        if results.multi_hand_landmarks:
-            num_hands = len(results.multi_hand_landmarks)
+            # Draw the hand annotations on the image.
+            image.flags.writeable = True
+            image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
-            for hand_landmarks in results.multi_hand_landmarks:
-                mp_drawing.draw_landmarks(image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+            # t1 = threading.Thread(target=run_volume, args=(image, results)) # type: ignore
+            # t2 = threading.Thread(target=run_bright, args=(image, results)) # type: ignore
 
-            if num_hands == 1:
-                # run_volume(image, results, lml1, xl1, yl1, box1)  # Call volume control method
-                run_bright(image, results, lml2, xl2, yl2, box2)  # Call brightness control method
-            elif num_hands == 2:
-                run_bright(image, results, lml2, xl2, yl2, box2)  # Call brightness control method
-                run_volume(image, results, lml1, xl1, yl1, box1)  # Call volume control method
+            if results.multi_hand_landmarks:
+                num_hands = len(results.multi_hand_landmarks)
+
+                for hand_landmarks in results.multi_hand_landmarks:
+                    mp_drawing.draw_landmarks(image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+
+                if num_hands == 1:
+                    # run_volume(image, results, lml1, xl1, yl1, box1)  # Call volume control method
+                    run_bright(image, results, lml2, xl2, yl2, box2)  # Call brightness control method
+                elif num_hands == 2:
+                    run_bright(image, results, lml2, xl2, yl2, box2)  # Call brightness control method
+                    run_volume(image, results, lml1, xl1, yl1, box1)  # Call volume control method
 
 
-        cv2.imshow('MediaPipe Hands', image)
+            cv2.imshow('MediaPipe Hands', image)
 
-        if cv2.waitKey(5) & 0xFF == ord('q'):
-            break
-cap.release()
-cv2.destroyAllWindows()
-   
+            if cv2.waitKey(5) & 0xFF == ord('q'):
+                break
+    cap.release()
+    cv2.destroyAllWindows()
+    
+def main():
+    run()
+
+if __name__ == "__main__":
+    main()
