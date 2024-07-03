@@ -19,13 +19,13 @@ volumeBar = 400
 volumePercent = 0
 muteStatus = False
 volume = cast(interface, POINTER(IAudioEndpointVolume))
-volume.GetMute()
-volume.GetMasterVolumeLevel()
-volumeRange = volume.GetVolumeRange()
+volume.GetMute() # type: ignore
+volume.GetMasterVolumeLevel() # type: ignore
+volumeRange = volume.GetVolumeRange() # type: ignore
 previousTime = 0
 
-mp_drawing = mp.solutions.drawing_utils
-mp_hands = mp.solutions.hands
+mp_drawing = mp.solutions.drawing_utils # type: ignore
+mp_hands = mp.solutions.hands # type: ignore
 
 
 
@@ -83,7 +83,7 @@ def run_volume(image, results, lml, xl, yl, box):
             cv2.putText(image, f'{int(volumePercent)} %', (w - 100, 450), cv2.FONT_HERSHEY_SIMPLEX,
                         1, (255, 255, 0), 2)
 
-        cVol = int(volume.GetMasterVolumeLevelScalar() * 100)
+        cVol = int(volume.GetMasterVolumeLevelScalar() * 100) # type: ignore
         cv2.putText(image, f'Current Volume: {int(cVol)}', (0, 60), cv2.FONT_HERSHEY_SIMPLEX,
                         0.5, (255, 255, 255), 2)
 
@@ -97,7 +97,7 @@ def run_volume(image, results, lml, xl, yl, box):
 
         #Step 7: Create Set Volume and Mute/ Unmute Function
         if fCount[3] == 0 and fCount[2] == 1 and fCount[1] == 1 and fCount[0] == 1:
-            volume.SetMasterVolumeLevelScalar(volumePercent / 100, None)
+            volume.SetMasterVolumeLevelScalar(volumePercent / 100, None) # type: ignore
             cv2.putText(image, 'Volume Set', (0, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
             colorVol = (0, 255, 0)
         # elif fCount[3] == 1 and fCount[2] == 0 and fCount[1] == 0 and muteStatus == False:
