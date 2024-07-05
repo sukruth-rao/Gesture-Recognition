@@ -1,10 +1,11 @@
-
+from typing import NamedTuple
 import cv2
 import mediapipe as mp
 import time
 import math
 import numpy as np
-# import threading
+from google.protobuf.json_format import MessageToDict
+import threading
 from ctypes import cast, POINTER
 from comtypes import CLSCTX_ALL
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
@@ -29,9 +30,9 @@ mp_hands = mp.solutions.hands # type: ignore
 
 
 
-def run_volume(image, results, lml, xl, yl, box):
+def run_volume(image, results, lml, xl, yl, box, index: int):
     # Step 2: Create lists of coordinates from extracted landmarks
-    for id, lm in enumerate(results.multi_hand_landmarks[1].landmark):
+    for id, lm in enumerate(results.multi_hand_landmarks[index].landmark):
         h, w, _ = image.shape
         xc, yc = int(lm.x * w), int(lm.y * h)
         lml.append([id, xc, yc])
@@ -125,10 +126,10 @@ def run_volume(image, results, lml, xl, yl, box):
     #             1, (255, 255, 255), 2)
 
 
-def run_bright(image, results, lml, xl, yl, box):
+def run_bright(image, results, lml, xl, yl, box, index: int):
 
     # Step 2: Create lists of coordinates from extracted landmarks
-    for id, lm in enumerate(results.multi_hand_landmarks[0].landmark):
+    for id, lm in enumerate(results.multi_hand_landmarks[index].landmark):
         h, w, _ = image.shape
         xc, yc = int(lm.x * w), int(lm.y * h)
         lml.append([id, xc, yc])
@@ -249,20 +250,49 @@ def run():
             # t1 = threading.Thread(target=run_volume, args=(image, results)) # type: ignore
             # t2 = threading.Thread(target=run_bright, args=(image, results)) # type: ignore
 
+
+            first_hand = ''
             if results.multi_hand_landmarks:
                 num_hands = len(results.multi_hand_landmarks)
+                print(num_hands) 
 
                 for hand_landmarks in results.multi_hand_landmarks:
                     mp_drawing.draw_landmarks(image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
 
-                if num_hands == 1:
-                    # run_volume(image, results, lml1, xl1, yl1, box1)  # Call volume control method
-                    run_bright(image, results, lml2, xl2, yl2, box2)  # Call brightness control method
-                elif num_hands == 2:
-                    run_bright(image, results, lml2, xl2, yl2, box2)  # Call brightness control method
-                    run_volume(image, results, lml1, xl1, yl1, box1)  # Call volume control method
+                for idx, hand_handedness in enumerate(results.multi_handedness):
+                    handedness_dict = MessageToDict(hand_handedness)
+                    which_hand = handedness_dict['classification'][0]['label']
+                    # print(which_hand)
+                if num_hands >= 1:
+                    if num_hands == 1:
+                        if which_hand == 'Left':
+                            first_hand = 'Left'
+                            run_volume(image, results, lml1, xl1, yl1, box1, 0)  # Call volume control method
+                        else:
+                            first_hand = 'Right'
+                            run_bright(image, results, lml2, xl2, yl2, box2, 0)  # Call brightness control method
+                        print(first_hand)
 
+                    else:
+                        run_volume(image, results, lml1, xl1, yl1, box1, 1)  # Call volume control method
+                        run_bright(image, results, lml2, xl2, yl2, box2, 0)  # Call brightness control method
+                        # print(idx, handedness_dict)
 
+                    # which_hand = handedness_dict['classification'][0][idx % 2]
+                    # print(which_hand)
+                    # if which_hand == 'Left':
+                    #     run_bright(image, results, lml2, xl2, yl2, box2)  # Call brightness control method
+                    # else:
+                    #     run_volume(image, results, lml1, xl1, yl1, box1)  # Call volume control method
+                            
+                    
+                
+                # if num_hands == 1:
+                #     # run_volume(image, results, lml1, xl1, yl1, box1)  # Call volume control method
+                #     run_bright(image, results, lml2, xl2, yl2, box2)  # Call brightness control method
+                # elif num_hands == 2:
+                #     run_bright(image, results, lml2, xl2, yl2, box2)  # Call brightness control method
+                #     run_volume(image, results, lml1, xl1, yl1, box1)  # Call volume control method
             cv2.imshow('MediaPipe Hands', image)
 
             if cv2.waitKey(5) & 0xFF == ord('q'):
