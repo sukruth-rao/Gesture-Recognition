@@ -1,10 +1,11 @@
-
+from typing import NamedTuple
 import cv2
 import mediapipe as mp
 import time
 import math
 import numpy as np
-# import threading
+from google.protobuf.json_format import MessageToDict
+import threading
 from ctypes import cast, POINTER
 from comtypes import CLSCTX_ALL
 from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
@@ -19,19 +20,19 @@ volumeBar = 400
 volumePercent = 0
 muteStatus = False
 volume = cast(interface, POINTER(IAudioEndpointVolume))
-volume.GetMute()
-volume.GetMasterVolumeLevel()
-volumeRange = volume.GetVolumeRange()
+volume.GetMute() # type: ignore
+volume.GetMasterVolumeLevel() # type: ignore
+volumeRange = volume.GetVolumeRange() # type: ignore
 previousTime = 0
 
-mp_drawing = mp.solutions.drawing_utils
-mp_hands = mp.solutions.hands
+mp_drawing = mp.solutions.drawing_utils # type: ignore
+mp_hands = mp.solutions.hands # type: ignore
 
 
 
-def run_volume(image, results, lml, xl, yl, box):
+def run_volume(image, results, lml, xl, yl, box, index: int):
     # Step 2: Create lists of coordinates from extracted landmarks
-    for id, lm in enumerate(results.multi_hand_landmarks[1].landmark):
+    for id, lm in enumerate(results.multi_hand_landmarks[index].landmark):
         h, w, _ = image.shape
         xc, yc = int(lm.x * w), int(lm.y * h)
         lml.append([id, xc, yc])
@@ -83,7 +84,7 @@ def run_volume(image, results, lml, xl, yl, box):
             cv2.putText(image, f'{int(volumePercent)} %', (w - 100, 450), cv2.FONT_HERSHEY_SIMPLEX,
                         1, (255, 255, 0), 2)
 
-        cVol = int(volume.GetMasterVolumeLevelScalar() * 100)
+        cVol = int(volume.GetMasterVolumeLevelScalar() * 100) # type: ignore
         cv2.putText(image, f'Current Volume: {int(cVol)}', (0, 60), cv2.FONT_HERSHEY_SIMPLEX,
                         0.5, (255, 255, 255), 2)
 
@@ -97,7 +98,7 @@ def run_volume(image, results, lml, xl, yl, box):
 
         #Step 7: Create Set Volume and Mute/ Unmute Function
         if fCount[3] == 0 and fCount[2] == 1 and fCount[1] == 1 and fCount[0] == 1:
-            volume.SetMasterVolumeLevelScalar(volumePercent / 100, None)
+            volume.SetMasterVolumeLevelScalar(volumePercent / 100, None) # type: ignore
             cv2.putText(image, 'Volume Set', (0, 90), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
             colorVol = (0, 255, 0)
         # elif fCount[3] == 1 and fCount[2] == 0 and fCount[1] == 0 and muteStatus == False:
@@ -125,10 +126,10 @@ def run_volume(image, results, lml, xl, yl, box):
     #             1, (255, 255, 255), 2)
 
 
-def run_bright(image, results, lml, xl, yl, box):
+def run_bright(image, results, lml, xl, yl, box, index: int):
 
     # Step 2: Create lists of coordinates from extracted landmarks
-    for id, lm in enumerate(results.multi_hand_landmarks[0].landmark):
+    for id, lm in enumerate(results.multi_hand_landmarks[index].landmark):
         h, w, _ = image.shape
         xc, yc = int(lm.x * w), int(lm.y * h)
         lml.append([id, xc, yc])
@@ -211,59 +212,96 @@ def run_bright(image, results, lml, xl, yl, box):
         cv2.putText(image, 'GestureControl Off', (0, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
         cv2.putText(image, str(int(area)), (box[1] + 50, box[1]), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
 
-cap = cv2.VideoCapture(0)
-with mp_hands.Hands(
-    min_detection_confidence=0.75,
-    min_tracking_confidence=0.75) as hands:
-    while cap.isOpened():
-        success, image = cap.read()
-        if not success:
-            print("Ignoring empty camera frame.")
-        # If loading a video, use 'break' instead of 'continue'.
-            continue
 
-        lml1 = []
-        xl1 = []
-        yl1 = []
-        box1 = []
-        lml2 = []
-        xl2 = []
-        yl2 = []
-        box2 = []
+def run():
 
-        # Flip the image horizontally for a later selfie-view display, and convert
-        # the BGR image to RGB.
-        image = cv2.cvtColor(cv2.flip(image, 1), cv2.COLOR_BGR2RGB)
-        # To improve performance, optionally mark the image as not writeable to
-        # pass by reference.
-        image.flags.writeable = False
-        results = hands.process(image)
+    cap = cv2.VideoCapture(0)
+    with mp_hands.Hands(
+        min_detection_confidence=0.75,
+        min_tracking_confidence=0.75) as hands:
+        while cap.isOpened():
+            success, image = cap.read()
+            if not success:
+                print("Ignoring empty camera frame.")
+            # If loading a video, use 'break' instead of 'continue'.
+                continue
 
-        # Draw the hand annotations on the image.
-        image.flags.writeable = True
-        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+            lml1 = []
+            xl1 = []
+            yl1 = []
+            box1 = []
+            lml2 = []
+            xl2 = []
+            yl2 = []
+            box2 = []
 
-        # t1 = threading.Thread(target=run_volume, args=(image, results)) # type: ignore
-        # t2 = threading.Thread(target=run_bright, args=(image, results)) # type: ignore
+            # Flip the image horizontally for a later selfie-view display, and convert
+            # the BGR image to RGB.
+            image = cv2.cvtColor(cv2.flip(image, 1), cv2.COLOR_BGR2RGB)
+            # To improve performance, optionally mark the image as not writeable to
+            # pass by reference.
+            image.flags.writeable = False
+            results = hands.process(image)
 
-        if results.multi_hand_landmarks:
-            num_hands = len(results.multi_hand_landmarks)
+            # Draw the hand annotations on the image.
+            image.flags.writeable = True
+            image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
 
-            for hand_landmarks in results.multi_hand_landmarks:
-                mp_drawing.draw_landmarks(image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
-
-            if num_hands == 1:
-                # run_volume(image, results, lml1, xl1, yl1, box1)  # Call volume control method
-                run_bright(image, results, lml2, xl2, yl2, box2)  # Call brightness control method
-            elif num_hands == 2:
-                run_bright(image, results, lml2, xl2, yl2, box2)  # Call brightness control method
-                run_volume(image, results, lml1, xl1, yl1, box1)  # Call volume control method
+            # t1 = threading.Thread(target=run_volume, args=(image, results)) # type: ignore
+            # t2 = threading.Thread(target=run_bright, args=(image, results)) # type: ignore
 
 
-        cv2.imshow('MediaPipe Hands', image)
+            first_hand = ''
+            if results.multi_hand_landmarks:
+                num_hands = len(results.multi_hand_landmarks)
+                print(num_hands) 
 
-        if cv2.waitKey(5) & 0xFF == ord('q'):
-            break
-cap.release()
-cv2.destroyAllWindows()
-   
+                for hand_landmarks in results.multi_hand_landmarks:
+                    mp_drawing.draw_landmarks(image, hand_landmarks, mp_hands.HAND_CONNECTIONS)
+
+                for idx, hand_handedness in enumerate(results.multi_handedness):
+                    handedness_dict = MessageToDict(hand_handedness)
+                    which_hand = handedness_dict['classification'][0]['label']
+                    # print(which_hand)
+                if num_hands >= 1:
+                    if num_hands == 1:
+                        if which_hand == 'Left':
+                            first_hand = 'Left'
+                            run_volume(image, results, lml1, xl1, yl1, box1, 0)  # Call volume control method
+                        else:
+                            first_hand = 'Right'
+                            run_bright(image, results, lml2, xl2, yl2, box2, 0)  # Call brightness control method
+                        print(first_hand)
+
+                    else:
+                        run_volume(image, results, lml1, xl1, yl1, box1, 1)  # Call volume control method
+                        run_bright(image, results, lml2, xl2, yl2, box2, 0)  # Call brightness control method
+                        # print(idx, handedness_dict)
+
+                    # which_hand = handedness_dict['classification'][0][idx % 2]
+                    # print(which_hand)
+                    # if which_hand == 'Left':
+                    #     run_bright(image, results, lml2, xl2, yl2, box2)  # Call brightness control method
+                    # else:
+                    #     run_volume(image, results, lml1, xl1, yl1, box1)  # Call volume control method
+                            
+                    
+                
+                # if num_hands == 1:
+                #     # run_volume(image, results, lml1, xl1, yl1, box1)  # Call volume control method
+                #     run_bright(image, results, lml2, xl2, yl2, box2)  # Call brightness control method
+                # elif num_hands == 2:
+                #     run_bright(image, results, lml2, xl2, yl2, box2)  # Call brightness control method
+                #     run_volume(image, results, lml1, xl1, yl1, box1)  # Call volume control method
+            cv2.imshow('MediaPipe Hands', image)
+
+            if cv2.waitKey(5) & 0xFF == ord('q'):
+                break
+    cap.release()
+    cv2.destroyAllWindows()
+    
+def main():
+    run()
+
+if __name__ == "__main__":
+    main()
